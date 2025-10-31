@@ -391,34 +391,13 @@
     </main>
 
     <!-- Panel de Asistente Virtual -->
-    <button class="chatbot-toggle" onclick="toggleChatbot()" id="chatbotToggle">
+    <!-- <button class="chatbot-toggle" onclick="toggleChatbot()" id="chatbotToggle">
         <i class="bi bi-chat-dots-fill"></i>
-    </button>
+    </button> -->
 
-    <div class="chatbot-panel" id="chatbotPanel" style="display: none;">
-        <div class="chatbot-header" onclick="toggleChatbot()">
-            <i class="bi bi-robot me-2"></i>
-            Asistente Inteligente (Chatbot)
-            <i class="bi bi-x-lg float-end"></i>
-        </div>
-        <div class="chatbot-body">
-            <!-- Placeholder para Dialogflow -->
-            <div class="p-3 text-center text-muted">
-                <div class="loading-spinner mb-3"></div>
-                <p>Cargando asistente virtual...</p>
-                <small>Integración con Dialogflow</small>
-
-                <!-- Ejemplo de cómo integrar Dialogflow -->
-                <div class="mt-3">
-                    <small class="text-muted">
-                        <strong>Para integrar Dialogflow:</strong><br>
-                        Reemplazar este div con:<br>
-                        <code>&lt;iframe src="YOUR_DIALOGFLOW_URL"&gt;&lt;/iframe&gt;</code>
-                    </small>
-                </div>
-            </div>
-        </div>
-    </div>
+    <script src="https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js?v=1"></script>
+    <df-messenger intent="WELCOME" chat-title="Interfaz_Conversacional_IA"
+        agent-id="07ee935c-1739-4d1c-8812-973219a699a9" language-code="es"></df-messenger>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
