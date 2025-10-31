@@ -10,7 +10,7 @@ class EnvironmentalDashboard {
             timestamps: []
         };
         this.isChatbotOpen = false;
-        
+
         this.init();
     }
 
@@ -93,16 +93,16 @@ class EnvironmentalDashboard {
     // Simulación de datos ambientales
     generateEnvironmentalData() {
         const now = new Date();
-        const timeString = now.toLocaleTimeString('es-ES', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
+        const timeString = now.toLocaleTimeString('es-ES', {
+            hour: '2-digit',
+            minute: '2-digit'
         });
 
         // Generar datos realistas
         const baseTemp = 24;
         const tempVariation = (Math.sin(now.getTime() / 100000) * 3);
         const temperature = baseTemp + tempVariation + (Math.random() - 0.5) * 2;
-        
+
         const baseHumidity = 65;
         const humidityVariation = (Math.cos(now.getTime() / 150000) * 10);
         const humidity = Math.max(30, Math.min(90, baseHumidity + humidityVariation + (Math.random() - 0.5) * 5));
@@ -110,7 +110,7 @@ class EnvironmentalDashboard {
         // Determinar calidad del aire basada en los valores
         let airQuality = 'Excelente';
         let airQualityStatus = 'status-good';
-        
+
         if (temperature > 28 || humidity > 80) {
             airQuality = 'Moderada';
             airQualityStatus = 'status-warning';
@@ -173,7 +173,7 @@ class EnvironmentalDashboard {
     updateChart(data) {
         if (this.charts.environment) {
             const chart = this.charts.environment;
-            
+
             // Limitar a los últimos 10 puntos de datos
             if (chart.data.labels.length >= 10) {
                 chart.data.labels.shift();
@@ -197,7 +197,7 @@ class EnvironmentalDashboard {
         for (let i = 5; i >= 0; i--) {
             const pastTime = new Date(Date.now() - (i * 60000));
             const data = this.generateEnvironmentalData();
-            
+
             if (this.charts.environment) {
                 this.charts.environment.data.labels.push(data.timestamp);
                 this.charts.environment.data.datasets[0].data.push(data.temperature);
@@ -228,7 +228,7 @@ class EnvironmentalDashboard {
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
-                
+
                 // Actualizar clase active
                 document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
                 link.classList.add('active');
@@ -236,9 +236,9 @@ class EnvironmentalDashboard {
                 // Animar scroll a sección
                 const targetId = link.getAttribute('href').substring(1);
                 const targetElement = document.getElementById(targetId) || document.querySelector('.dashboard-card');
-                
+
                 if (targetElement) {
-                    targetElement.scrollIntoView({ 
+                    targetElement.scrollIntoView({
                         behavior: 'smooth',
                         block: 'start'
                     });
@@ -267,24 +267,248 @@ class EnvironmentalDashboard {
     }
 }
 
+
+// Agrega esta clase al final de tu archivo dashboard.js
+
+class VoiceAnimationController {
+    constructor() {
+        this.isRecording = false;
+        this.isSpeaking = false;
+        this.modelViewer = null;
+        this.chatbotWindow = null;
+
+        this.init();
+    }
+
+    init() {
+        this.setupVoiceRecognition();
+        this.setupVoiceSynthesis();
+        this.findChatbotElements();
+        this.setupVoiceButton();
+        this.interceptDialogflowMessages();
+    }
+
+    findChatbotElements() {
+        // Esperar a que el iframe de Dialogflow se cargue
+        setTimeout(() => {
+            const dfMessenger = document.querySelector('df-messenger');
+            if (dfMessenger) {
+                this.chatbotWindow = dfMessenger;
+                console.log('Dialogflow messenger encontrado');
+            }
+        }, 2000);
+    }
+
+    setupVoiceRecognition() {
+        if (annyang) {
+            // Configurar comandos de voz
+            const commands = {
+                'hola': () => this.sendMessageToDialogflow('hola'),
+                '¿cómo estás?': () => this.sendMessageToDialogflow('¿cómo estás?'),
+                'ayuda': () => this.sendMessageToDialogflow('ayuda'),
+                'información': () => this.sendMessageToDialogflow('información'),
+                // Agrega más comandos según necesites
+            };
+
+            annyang.addCommands(commands);
+            annyang.setLanguage('es-ES'); // Configurar idioma español
+
+            // Configurar callback para cuando se detecta voz
+            annyang.addCallback('result', (phrases) => {
+                console.log('Voz detectada:', phrases[0]);
+                this.sendMessageToDialogflow(phrases[0]);
+                this.stopRecording();
+            });
+        }
+    }
+
+    setupVoiceSynthesis() {
+        // Configurar ResponsiveVoice para texto a voz
+        if (window.responsiveVoice) {
+            responsiveVoice.setDefaultVoice("Spanish Female");
+            responsiveVoice.setDefaultRate(0.8);
+        }
+    }
+
+    setupVoiceButton() {
+        const voiceBtn = document.getElementById('voiceBtn');
+        if (voiceBtn) {
+            voiceBtn.addEventListener('click', () => {
+                if (this.isRecording) {
+                    this.stopRecording();
+                } else {
+                    this.startRecording();
+                }
+            });
+        }
+    }
+
+    startRecording() {
+        if (annyang) {
+            this.isRecording = true;
+            const voiceBtn = document.getElementById('voiceBtn');
+            voiceBtn.classList.add('recording');
+            voiceBtn.innerHTML = '<i class="bi bi-stop-fill"></i>';
+
+            annyang.start({
+                continuous: false,
+                autoRestart: false
+            });
+
+            console.log('Grabación de voz iniciada');
+        }
+    }
+
+    stopRecording() {
+        if (annyang) {
+            this.isRecording = false;
+            const voiceBtn = document.getElementById('voiceBtn');
+            voiceBtn.classList.remove('recording');
+            voiceBtn.innerHTML = '<i class="bi bi-mic-fill"></i>';
+
+            annyang.abort();
+
+            console.log('Grabación de voz detenida');
+        }
+    }
+
+    sendMessageToDialogflow(message) {
+        // Enviar mensaje al chatbot de Dialogflow
+        const dfMessenger = document.querySelector('df-messenger');
+        if (dfMessenger) {
+            // Método para enviar mensaje al iframe de Dialogflow
+            dfMessenger.sendTextQuery = function (query) {
+                const iframe = dfMessenger.shadowRoot.querySelector('iframe');
+                if (iframe && iframe.contentWindow) {
+                    iframe.contentWindow.postMessage({
+                        type: 'df-messenger-send-query',
+                        query: query
+                    }, '*');
+                }
+            };
+
+            dfMessenger.sendTextQuery(message);
+            console.log('Mensaje enviado a Dialogflow:', message);
+        }
+    }
+
+    interceptDialogflowMessages() {
+        // Escuchar mensajes del iframe de Dialogflow
+        window.addEventListener('message', (event) => {
+            if (event.origin.includes('dialogflow.cloud.google.com')) {
+                const data = event.data;
+
+                // Manejar diferentes tipos de mensajes
+                if (data.type === 'df-messenger-response') {
+                    this.handleDialogflowResponse(data.response);
+                }
+            }
+        });
+    }
+
+    handleDialogflowResponse(response) {
+        // Obtener el texto de respuesta de Dialogflow
+        let responseText = '';
+
+        if (response.queryResult && response.queryResult.fulfillmentText) {
+            responseText = response.queryResult.fulfillmentText;
+        } else if (response.queryResult && response.queryResult.fulfillmentMessages) {
+            const messages = response.queryResult.fulfillmentMessages;
+            for (let msg of messages) {
+                if (msg.text && msg.text.text) {
+                    responseText = msg.text.text[0];
+                    break;
+                }
+            }
+        }
+
+        if (responseText) {
+            console.log('Respuesta de Dialogflow:', responseText);
+            this.speakResponse(responseText);
+            this.animateAvatarSpeaking(responseText);
+        }
+    }
+
+    speakResponse(text) {
+        if (window.responsiveVoice && !this.isSpeaking) {
+            this.isSpeaking = true;
+
+            // Configurar callback para cuando termina de hablar
+            responsiveVoice.speak(text, "Spanish Female", {
+                rate: 0.8,
+                onend: () => {
+                    this.isSpeaking = false;
+                    this.stopAvatarAnimation();
+                }
+            });
+
+            console.log('Hablando texto:', text);
+        }
+    }
+
+    animateAvatarSpeaking(text) {
+        const modelViewer = document.querySelector('model-viewer');
+        if (modelViewer && text.length > 0) {
+            // Calcular duración estimada basada en longitud del texto
+            const estimatedDuration = text.length * 0.1; // Aproximadamente 0.1 segundos por carácter
+
+            // Agregar clase de animación
+            modelViewer.classList.add('avatar-speaking');
+
+            console.log('Animación de avatar activada por:', estimatedDuration, 'segundos');
+        }
+    }
+
+    stopAvatarAnimation() {
+        const modelViewer = document.querySelector('model-viewer');
+        if (modelViewer) {
+            modelViewer.classList.remove('avatar-speaking');
+            console.log('Animación de avatar detenida');
+        }
+    }
+}
+
+// Modifica el DOMContentLoaded para incluir el controlador de voz
+document.addEventListener('DOMContentLoaded', () => {
+    const dashboard = new EnvironmentalDashboard();
+    const voiceController = new VoiceAnimationController();
+
+    // Hacer visible el dashboard después de un breve retraso
+    setTimeout(() => {
+        document.querySelectorAll('.dashboard-card').forEach((card, index) => {
+            setTimeout(() => {
+                card.classList.add('visible');
+            }, index * 200);
+        });
+    }, 100);
+
+    // Prevenir el comportamiento por defecto de enlaces
+    document.querySelectorAll('a[href="#"]').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+        });
+    });
+});
+
+
 // Funciones globales
 function toggleChatbot() {
     const panel = document.getElementById('chatbotPanel');
     const toggle = document.getElementById('chatbotToggle');
-    
+
     if (panel.style.display === 'none') {
         panel.style.display = 'block';
         toggle.style.display = 'none';
-        
+
         // Animar apertura
         panel.style.opacity = '0';
         panel.style.transform = 'translateY(20px)';
-        
+
         setTimeout(() => {
             panel.style.opacity = '1';
             panel.style.transform = 'translateY(0)';
         }, 10);
-        
+
     } else {
         panel.style.display = 'none';
         toggle.style.display = 'block';
@@ -322,9 +546,9 @@ function showNotification(message, type = 'info') {
         color: var(--text-primary);
     `;
     notification.textContent = message;
-    
+
     document.body.appendChild(notification);
-    
+
     // Remover después de 3 segundos
     setTimeout(() => {
         notification.style.animation = 'slideOutRight 0.3s ease';
@@ -333,6 +557,17 @@ function showNotification(message, type = 'info') {
         }, 300);
     }, 3000);
 }
+
+const commands = {
+    'hola': () => this.sendMessageToDialogflow('hola'),
+    '¿cómo estás?': () => this.sendMessageToDialogflow('¿cómo estás?'),
+    'ayuda': () => this.sendMessageToDialogflow('ayuda'),
+    'información': () => this.sendMessageToDialogflow('información'),
+    'temperatura': () => this.sendMessageToDialogflow('¿Cuál es la temperatura actual?'),
+    'humedad': () => this.sendMessageToDialogflow('¿Cuál es el nivel de humedad?'),
+    'gracias': () => this.sendMessageToDialogflow('gracias'),
+    'adiós': () => this.sendMessageToDialogflow('adiós')
+};
 
 // Animaciones CSS adicionales
 const style = document.createElement('style');
@@ -363,7 +598,7 @@ document.head.appendChild(style);
 // Inicializar dashboard cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
     const dashboard = new EnvironmentalDashboard();
-    
+
     // Hacer visible el dashboard después de un breve retraso
     setTimeout(() => {
         document.querySelectorAll('.dashboard-card').forEach((card, index) => {
@@ -372,7 +607,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }, index * 200);
         });
     }, 100);
-    
+
     // Prevenir el comportamiento por defecto de enlaces
     document.querySelectorAll('a[href="#"]').forEach(link => {
         link.addEventListener('click', (e) => {
@@ -389,7 +624,7 @@ function load3DModel() {
             console.log('Modelo 3D cargado exitosamente');
             showNotification('Modelo 3D cargado correctamente', 'success');
         });
-        
+
         modelViewer.addEventListener('error', () => {
             console.error('Error al cargar el modelo 3D');
             showNotification('Error al cargar el modelo 3D', 'danger');

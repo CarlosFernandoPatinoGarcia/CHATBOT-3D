@@ -265,6 +265,65 @@
                 transform: translateY(0);
             }
         }
+
+
+
+        .avatar-speaking {
+            animation: speak 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes speak {
+            0% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(1.02);
+            }
+        }
+
+        /* Controles de voz */
+        .voice-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 100;
+        }
+
+        .voice-btn {
+            background: var(--primary-color);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .voice-btn:hover {
+            background: var(--secondary-color);
+            transform: scale(1.1);
+        }
+
+        .voice-btn.recording {
+            background: var(--danger-color);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
     </style>
 </head>
 
@@ -350,6 +409,17 @@
                     </div>
                 </div>
 
+
+                <div class="voice-controls">
+                    <button class="voice-btn" id="voiceBtn" title="Activar voz">
+                        <i class="bi bi-mic-fill"></i>
+                    </button>
+                </div>
+
+
+
+
+
                 <!-- Sección de Visualización 3D / AR -->
                 <div class="col-lg-8 col-md-12">
                     <div class="dashboard-card fade-in">
@@ -394,6 +464,9 @@
     <!-- <button class="chatbot-toggle" onclick="toggleChatbot()" id="chatbotToggle">
         <i class="bi bi-chat-dots-fill"></i>
     </button> -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/annyang/2.6.1/annyang.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/responsivevoice/1.6.1/responsivevoice.min.js"></script>
 
     <script src="https://www.gstatic.com/dialogflow-console/fast/messenger/bootstrap.js?v=1"></script>
     <df-messenger intent="WELCOME" chat-title="Interfaz_Conversacional_IA"
